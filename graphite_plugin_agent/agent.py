@@ -214,10 +214,10 @@ class GraphitePluginAgent(helper.Controller):
             host_name = self.agent_data['host']
             component_name = component['name']
             # filter NewRelic stuff away
+            guid = component['guid']
             if "newrelic" in guid:
-                guid = re.sub(r"^com\.(.*)\.newrelic_", "", component['guid'])
-            else:
-                guid = component['guid']
+                guid = re.sub(r"^com\.(.*)\.newrelic_", "", guid)
+
             metrics = component['metrics']
             host = component['name']
             for metric in metrics:
