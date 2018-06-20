@@ -1,8 +1,8 @@
-NewRelic Plugin Agent
+Graphite Plugin Agent
 =====================
 
 An agent that polls supported backend systems and submits the results to the
-NewRelic platform. Currently supported backend systems are:
+Graphite platform. Currently supported backend systems are:
 
 - Alternative PHP Cache
 - Apache HTTP Server
@@ -20,6 +20,10 @@ NewRelic platform. Currently supported backend systems are:
 - Riak
 - uWSGI
 
+Credit
+-----------------
+This is a rewrite/fork of MeetMe's excellent NewRelic plugin. As such, any additional modules they write will integrate into this project. Check them out: https://github.com/MeetMe/newrelic-plugin-agent
+
 Base Requirements
 -----------------
 The agent requires Python 2.6 or 2.7 and ``pip`` for installation. Individual plugin backends may require additional libraries and are detailed below.
@@ -34,25 +38,25 @@ Installation Instructions
 
 ::
 
-    $ pip install newrelic-plugin-agent
+    $ pip install graphite-plugin-agent
 
 * See ``pip`` installation instructions at http://www.pip-installer.org/en/latest/installing.html
 
-2. Copy the configuration file example from ``/opt/newrelic-plugin-agent/newrelic-plugin-agent.cfg`` to ``/etc/newrelic/newrelic-plugin-agent.cfg`` and edit the configuration in that file.
+2. Copy the configuration file example from ``/opt/graphite-plugin-agent/graphite-plugin-agent.cfg`` to ``/etc/graphite-plugin-agent.cfg`` and edit the configuration in that file.
 
-3. Make a ``/var/log/newrelic`` directory and make sure it is writable by the user specified in the configuration file
+3. Make a ``/var/log/graphite`` directory and make sure it is writable by the user specified in the configuration file
 
-4. Make a ``/var/run/newrelic`` directory and make sure it is writable by the user specified in the configuration file
+4. Make a ``/var/run/graphite`` directory and make sure it is writable by the user specified in the configuration file
 
 5. Run the app:
 
 ::
 
-    $ newrelic-plugin-agent -c PATH-TO-CONF-FILE [-f]
+    $ graphite-plugin-agent -c PATH-TO-CONF-FILE [-f]
 
 Where ``-f`` is to run it in the foreground instead of as a daemon.
 
-Sample configuration and init.d scripts are installed to ``/opt/newrelic-plugin-agent`` in addition to a PHP script required for APC monitoring.
+Sample configuration and init.d scripts are installed to ``/opt/graphite-plugin-agent`` in addition to a PHP script required for APC monitoring.
 
 Installing Additional Requirements
 ----------------------------------
@@ -62,15 +66,15 @@ this, make sure you have the latest version of ``pip`` installed (http://www.pip
 
 ::
 
-    $ pip install newrelic-plugin-agent[mongodb]
+    $ pip install graphite-plugin-agent[mongodb]
 
 or::
 
-    $ pip install newrelic-plugin-agent[pgbouncer]
+    $ pip install graphite-plugin-agent[pgbouncer]
 
 or::
 
-    $ pip install newrelic-plugin-agent[postgresql]
+    $ pip install graphite-plugin-agent[postgresql]
 
 If this does not work for you, make sure you are running a recent copy of ``pip`` (>= 1.3).
 
@@ -110,7 +114,7 @@ The fields for plugin configurations can vary due to a plugin's configuration re
 
 APC Installation Notes
 ----------------------
-Copy the ``apc-nrp.php`` script to a directory that can be served by your web server or ``php-fpm`` application. Edit the ``newrelic-plugin-agent`` configuration to point to the appropriate URL.
+Copy the ``apc-nrp.php`` script to a directory that can be served by your web server or ``php-fpm`` application. Edit the ``graphite-plugin-agent`` configuration to point to the appropriate URL.
 
 Apache HTTPd Installation Notes
 -------------------------------
@@ -228,9 +232,9 @@ E.g.:
     postgresql:
       host: localhost
       port: 5432
-      user: newrelic
+      user: graphite
       dbname: postgres
-      password: newrelic
+      password: graphite
       superuser: False
       relation_stats: False
 
@@ -254,7 +258,7 @@ UWSGI Installation Notes
 ------------------------
 The UWSGI plugin can communicate either over UNIX domain sockets using the path configuration variable or TCP/IP using the host and port variables. Do not include both.
 
-Make sure you have `enabled stats server 
+Make sure you have `enabled stats server
 <http://uwsgi-docs.readthedocs.org/en/latest/StatsServer.html>`_ in your uwsgi config.
 
 Configuration Example
@@ -265,10 +269,11 @@ Configuration Example
     %YAML 1.2
     ---
     Application:
-      license_key: REPLACE_WITH_REAL_KEY
-      poll_interval: 60
-      #newrelic_api_timeout: 10
-      #proxy: http://localhost:8080
+      graphite_host: hostname
+      graphite_port: port
+      wake_interval: 60
+      #graphite_timeout: 2
+      #localhost_name: override.system.hostname
 
       apache_httpd:
          -  name: hostname1
@@ -408,8 +413,8 @@ Configuration Example
           #verify_ssl_cert: true
 
     Daemon:
-      user: newrelic
-      pidfile: /var/run/newrelic/newrelic-plugin-agent.pid
+      user: graphite
+      pidfile: /var/run/graphite/graphite-plugin-agent.pid
 
     Logging:
       formatters:
@@ -419,11 +424,11 @@ Configuration Example
         file:
           class : logging.handlers.RotatingFileHandler
           formatter: verbose
-          filename: /var/log/newrelic/newrelic-plugin-agent.log
+          filename: /var/log/graphite/graphite-plugin-agent.log
           maxBytes: 10485760
           backupCount: 3
       loggers:
-        newrelic-plugin-agent:
+        graphite-plugin-agent:
           level: INFO
           propagate: True
           handlers: [console, file]
@@ -434,14 +439,14 @@ Configuration Example
 
 Troubleshooting
 ---------------
-- If the installation does not install the ``newrelic-plugin-agent`` application in ``/usr/bin`` then it is likely that ``setuptools`` or ``distribute`` is not up to date. The following commands can be run to install ``distribute`` and ``pip`` for installing the application:
+- If the installation does not install the ``graphite-plugin-agent`` application in ``/usr/bin`` then it is likely that ``setuptools`` or ``distribute`` is not up to date. The following commands can be run to install ``distribute`` and ``pip`` for installing the application:
 
 ::
 
     $ curl http://python-distribute.org/distribute_setup.py | python
     $ curl https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python
 
-- If the application installs but doesn't seem to be submitting status, check the logfile which at ``/tmp/newrelic-plugin-agent.log`` if the default example logging configuration is used.
-- If the agent starts but dies shortly after ensure that ``/var/log/newrelic`` and ``/var/run/newrelic`` are writable by the same user specified in the daemon section of the configuration file.
-- If the agent has died and won't restart, remove any files found in ``/var/run/newrelic/``
+- If the application installs but doesn't seem to be submitting status, check the logfile which at ``/tmp/graphite-plugin-agent.log`` if the default example logging configuration is used.
+- If the agent starts but dies shortly after ensure that ``/var/log/graphite`` and ``/var/run/graphite`` are writable by the same user specified in the daemon section of the configuration file.
+- If the agent has died and won't restart, remove any files found in ``/var/run/graphite/``
 - If using the Apache HTTP plugin and your stats are blank, ensure the ExtendedStatus directive is on.

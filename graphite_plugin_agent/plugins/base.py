@@ -107,7 +107,7 @@ class Plugin(object):
         LOGGER.debug('%s: %r', metric_name, self.gauge_values[metric])
 
     def component_data(self):
-        """Create the component section of the NewRelic Platform data payload
+        """Create the component section of the Graphite Platform data payload
         message.
 
         :rtype: dict
@@ -160,7 +160,7 @@ class Plugin(object):
         return count, total, min_val, max_val, values
 
     def metric_name(self, metric, units):
-        """Return the metric name in the format for the NewRelic platform
+        """Return the metric name in the format for the Graphite platform
 
         :param str metric: The name of th metric
         :param str units: The unit name
@@ -172,7 +172,7 @@ class Plugin(object):
 
     def metric_payload(self, value, min_value=None, max_value=None, count=None,
                        squares=None):
-        """Return the metric in the standard payload format for the NewRelic
+        """Return the metric in the standard payload format for the Graphite
         agent.
 
         :rtype: dict
@@ -180,7 +180,7 @@ class Plugin(object):
         """
         if not value:
             value = 0
-            
+
         if isinstance(value, basestring):
             value = 0
 

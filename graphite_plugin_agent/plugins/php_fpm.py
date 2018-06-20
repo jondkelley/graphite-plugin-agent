@@ -4,7 +4,7 @@ PHP FPM Support
 """
 import logging
 
-from newrelic_plugin_agent.plugins import base
+from graphite_plugin_agent.plugins import base
 
 LOGGER = logging.getLogger(__name__)
 

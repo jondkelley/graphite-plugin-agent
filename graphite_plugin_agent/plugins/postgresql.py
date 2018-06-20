@@ -7,7 +7,7 @@ import psycopg2
 from psycopg2 import extensions
 from psycopg2 import extras
 
-from newrelic_plugin_agent.plugins import base
+from graphite_plugin_agent.plugins import base
 
 LOGGER = logging.getLogger(__name__)
 

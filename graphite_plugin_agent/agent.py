@@ -1,7 +1,9 @@
 """
-Multiple Plugin Agent for the New Relic Platform
+Multiple Plugin Agent for the Graphite Platform
 
 """
+import graphitesend
+from graphitesend import GraphiteSendException
 import helper
 import importlib
 import json
@@ -13,36 +15,33 @@ import sys
 import Queue as queue
 import threading
 import time
+import re
 
-from newrelic_plugin_agent import __version__
-from newrelic_plugin_agent import plugins
+from graphite_plugin_agent import __version__
+from graphite_plugin_agent import plugins
 
 LOGGER = logging.getLogger(__name__)
 
 
-class NewRelicPluginAgent(helper.Controller):
-    """The NewRelicPluginAgent class implements a agent that polls plugins
-    every minute and reports the state to NewRelic.
+class GraphitePluginAgent(helper.Controller):
+    """The GraphitePluginAgent class implements a agent that polls plugins
+    every minute and reports the state to Graphite.
 
     """
-    IGNORE_KEYS = ['license_key', 'proxy', 'endpoint',
+    IGNORE_KEYS = ['graphite_host', 'graphite_port',
                    'poll_interval', 'wake_interval']
     MAX_METRICS_PER_REQUEST = 10000
-    PLATFORM_URL = 'https://platform-api.newrelic.com/platform/v1/metrics'
     WAKE_INTERVAL = 60
 
     def __init__(self, args, operating_system):
-        """Initialize the NewRelicPluginAgent object.
+        """Initialize the GraphitePluginAgent object.
 
         :param argparse.Namespace args: Command line arguments
         :param str operating_system: The operating_system name
 
         """
-        super(NewRelicPluginAgent, self).__init__(args, operating_system)
+        super(GraphitePluginAgent, self).__init__(args, operating_system)
         self.derive_last_interval = dict()
-        self.endpoint = self.PLATFORM_URL
-        self.http_headers = {'Accept': 'application/json',
-                             'Content-Type': 'application/json'}
         self.last_interval_start = None
         self.min_max_values = dict()
         self._wake_interval = (self.config.application.get('wake_interval') or
@@ -62,14 +61,11 @@ class NewRelicPluginAgent(helper.Controller):
         startup order of operations.
 
         """
-        if hasattr(self.config.application, 'endpoint'):
-            self.endpoint = self.config.application.endpoint
-        self.http_headers['X-License-Key'] = self.license_key
         self.last_interval_start = time.time()
 
     @property
     def agent_data(self):
-        """Return the agent data section of the NewRelic Platform data payload
+        """Return the agent data section of the Graphite Platform data payload
 
         :rtype: dict
 
@@ -78,19 +74,10 @@ class NewRelicPluginAgent(helper.Controller):
                 'pid': os.getpid(),
                 'version': __version__}
 
-    @property
-    def license_key(self):
-        """Return the NewRelic license key from the configuration values.
-
-        :rtype: str
-
-        """
-        return self.config.application.license_key
-
     def poll_plugin(self, plugin_name, plugin, config):
         """Kick off a background thread to run the processing task.
 
-        :param newrelic_plugin_agent.plugins.base.Plugin plugin: The plugin
+        :param graphite_plugin_agent.plugins.base.Plugin plugin: The plugin
         :param dict config: The config for the plugin
 
         """
@@ -122,7 +109,7 @@ class NewRelicPluginAgent(helper.Controller):
             time.sleep(1)
 
         self.threads = list()
-        self.send_data_to_newrelic()
+        self.send_data_to_graphite()
         duration = time.time() - start_time
         self.next_wake_interval = self._wake_interval - duration
         if self.next_wake_interval < 1:
@@ -166,21 +153,7 @@ class NewRelicPluginAgent(helper.Controller):
 
             self.min_max_values[guid][name][metric] = min_val, max_val
 
-    @property
-    def proxies(self):
-        """Return the proxy used to access NewRelic.
-
-        :rtype: dict
-
-        """
-        if 'proxy' in self.config.application:
-            return {
-                'http': self.config.application['proxy'],
-                'https': self.config.application['proxy']
-            }
-        return None
-
-    def send_data_to_newrelic(self):
+    def send_data_to_graphite(self):
         metrics = 0
         components = list()
         while self.publish_queue.qsize():
@@ -208,33 +181,61 @@ class NewRelicPluginAgent(helper.Controller):
         LOGGER.debug('Done, will send remainder of %i metrics', metrics)
         self.send_components(components, metrics)
 
-    def send_components(self, components, metrics):
-        """Create the headers and payload to send to NewRelic platform as a
-        JSON encoded POST body.
+    def graphite_send(self, name, value, guid, suffix,
+                        host_name, component_name="default"):
+        """
+        call Graphite platform using graphitesend
+        """
+        # replace fqdn with underscores
+        host_name = re.sub(r"\.", "_", host_name)
+        host_name = self.config.get('localhost_name', host_name)
+        suffix = "_{0}".format(suffix)
+        prefix = "graphite_agent.{0}.{1}".format(host_name, guid)
+        timeout = self.config.get('graphite_timeout', 2)
+        g = graphitesend.init(prefix=prefix, suffix=suffix,
+            graphite_server=self.config.application['graphite_host'],
+            graphite_port=self.config.application['graphite_port'],
+            system_name=component_name, timeout_in_seconds=timeout)
+        g.send(name, value)
 
+    def send_components(self, components, metrics):
+        """Create the headers and payload to send to Graphite platform using
+        the graphitesend library
         """
         if not metrics:
-            LOGGER.warning('No metrics to send to NewRelic this interval')
+            LOGGER.warning('No metrics to send to Graphite this interval')
             return
 
-        LOGGER.info('Sending %i metrics to NewRelic', metrics)
+        LOGGER.info('Sending %i metrics to Graphite', metrics)
         body = {'agent': self.agent_data, 'components': components}
         LOGGER.debug(body)
-        try:
-            response = requests.post(self.endpoint,
-                                     headers=self.http_headers,
-                                     proxies=self.proxies,
-                                     data=json.dumps(body, ensure_ascii=False),
-                                     timeout=self.config.get('newrelic_api_timeout', 10),
-                                     verify=self.config.get('verify_ssl_cert',
-                                                            True))
-            LOGGER.debug('Response: %s: %r',
-                         response.status_code,
-                         response.content.strip())
-        except requests.ConnectionError as error:
-            LOGGER.error('Error reporting stats: %s', error)
-        except requests.Timeout as error:
-            LOGGER.error('TimeoutError reporting stats: %s', error)
+
+        for component in components:
+            host_name = self.agent_data['host']
+            component_name = component['name']
+            # filter NewRelic stuff away
+            if "newrelic" in guid:
+                guid = re.sub(r"^com\.(.*)\.newrelic_", "", component['guid'])
+            else:
+                guid = component['guid']
+            metrics = component['metrics']
+            host = component['name']
+            for metric in metrics:
+                objects = {}
+                objects['total'] = metrics[metric]['total']
+                objects['max'] = metrics[metric]['max']
+                objects['min'] = metrics[metric]['min']
+                objects['count'] = metrics[metric]['count']
+                # filter NewRelic stuff away
+                metric = re.sub(r"[\[/]", ".", metric) # match [ or /
+                metric = re.sub(r"\]", "", metric) # remove ]
+                metric = re.sub(r"^Component\.", "", metric) # wipe component
+                for suffix in objects:
+                    try:
+                        self.graphite_send(metric, objects[suffix], guid,
+                            suffix, host_name, component_name)
+                    except GraphiteSendException as error:
+                        LOGGER.error('Graphite error: %s', error)
 
     @staticmethod
     def _get_plugin(plugin_path):
@@ -297,7 +298,7 @@ class NewRelicPluginAgent(helper.Controller):
         used to maintain the stack of running plugins.
 
         :param str name: The name of the plugin
-        :param newrelic_plugin_agent.plugin.Plugin plugin: The plugin class
+        :param graphite_plugin_agent.plugin.Plugin plugin: The plugin class
         :param dict config: The plugin configuration
         :param int poll_interval: How often the plugin is invoked
 
@@ -321,10 +322,10 @@ class NewRelicPluginAgent(helper.Controller):
 
 
 def main():
-    helper.parser.description('The NewRelic Plugin Agent polls various '
-                              'services and sends the data to the NewRelic '
+    helper.parser.description('The Graphite Plugin Agent polls various '
+                              'services and sends the data to the Graphite '
                               'Platform')
-    helper.parser.name('newrelic_plugin_agent')
+    helper.parser.name('graphite_plugin_agent')
     argparse = helper.parser.get()
     argparse.add_argument('-C',
                           action='store_true',
@@ -334,7 +335,7 @@ def main():
     if args.configure:
         print('Configuration')
         sys.exit(0)
-    helper.start(NewRelicPluginAgent)
+    helper.start(GraphitePluginAgent)
 
 
 if __name__ == '__main__':

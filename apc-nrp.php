@@ -1,6 +1,6 @@
 <?php
 /**
- * PHP APC Data for NewRelic Plugin Agent
+ * PHP APC Data for Graphite Plugin Agent
  *
  */
 Header('Content-Type: application/json');

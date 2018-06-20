@@ -7,7 +7,7 @@ from pymongo import errors
 import logging
 import pymongo
 
-from newrelic_plugin_agent.plugins import base
+from graphite_plugin_agent.plugins import base
 
 LOGGER = logging.getLogger(__name__)
 

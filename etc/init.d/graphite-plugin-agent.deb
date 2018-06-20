@@ -1,27 +1,27 @@
 #! /bin/sh
 
 ### BEGIN INIT INFO
-# Provides:          newrelic-plugin-agent
+# Provides:          graphite-plugin-agent
 # Required-Start:    $network $local_fs $remote_fs
 # Required-Stop:     $remote_fs
 # Should-Start:      $named
 # Should-Stop:
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: The New Relic Plugin Agent
-# Description:       The New Relic Plugin Agent
+# Short-Description: The Graphite Plugin Agent
+# Description:       The Graphite Plugin Agent
 ### END INIT INFO
 
-NAME=newrelic-plugin-agent
-CONFIG=/etc/newrelic/newrelic-plugin-agent.cfg
-DAEMON=/usr/local/bin/newrelic-plugin-agent
+NAME=graphite-plugin-agent
+CONFIG=/etc/graphite/graphite-plugin-agent.cfg
+DAEMON=/usr/local/bin/graphite-plugin-agent
 DAEMON_OPTS="-c $CONFIG"
-DESC="New Relic Plugin Agent"
+DESC="Graphite Plugin Agent"
 TIMEOUT=5
 PIDDIR_MODE=755
 PIDDIR_OWNER=root
 
-# Include newrelic plugin agent defaults if available
+# Include graphite plugin agent defaults if available
 if [ -f /etc/default/$NAME ] ; then
     . /etc/default/$NAME
 fi

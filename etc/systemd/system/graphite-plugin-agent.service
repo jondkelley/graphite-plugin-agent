@@ -1,0 +1,19 @@
+[Unit]
+Description=graphite-plugin-agent
+
+[Service]
+Type=forking
+PrivateTmp=yes
+User=graphite
+Group=graphite
+PermissionsStartOnly=true
+PIDFile=/var/run/graphite/graphite-plugin-agent.pid
+ExecStartPre=/bin/mkdir -p /var/run/graphite
+ExecStartPre=/bin/rm -f /var/run/graphite/graphite-plugin-agent.pid
+ExecStartPre=/bin/chown -R graphite:graphite /var/run/graphite
+ExecStart=/usr/bin/graphite-plugin-agent -c /etc/graphite/graphite-plugin-agent.cfg
+ExecStop=/bin/kill -INT $MAINPID
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target

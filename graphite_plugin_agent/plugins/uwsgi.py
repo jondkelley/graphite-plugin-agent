@@ -6,7 +6,7 @@ import json
 import logging
 import re
 
-from newrelic_plugin_agent.plugins import base
+from graphite_plugin_agent.plugins import base
 
 LOGGER = logging.getLogger(__name__)
 
@@ -98,4 +98,3 @@ class uWSGI(base.SocketStatsPlugin):
             data = re.sub(r'"HTTP_COOKIE=[^"]*"', '""', data)
             return json.loads(data)
         return {}
-

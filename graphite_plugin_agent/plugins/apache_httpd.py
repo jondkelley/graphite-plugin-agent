@@ -5,7 +5,7 @@ ApacheHTTPD Support
 import logging
 import re
 
-from newrelic_plugin_agent.plugins import base
+from graphite_plugin_agent.plugins import base
 
 LOGGER = logging.getLogger(__name__)
 
@@ -106,7 +106,7 @@ class ApacheHTTPD(base.HTTPStatsPlugin):
             else:
                 LOGGER.debug('Found unmapped key/value pair: %s = %s',
                              key, value)
-        
+
         score_data = self.get_scoreboard(stats)
         for key, value in score_data.iteritems():
             if key in self.KEYS:
@@ -121,4 +121,3 @@ class ApacheHTTPD(base.HTTPStatsPlugin):
             else:
                 LOGGER.debug('Found unmapped key/value pair: %s = %s',
                              key, value)
-

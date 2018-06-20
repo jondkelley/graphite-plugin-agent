@@ -1,0 +1,9 @@
+*.pyc
+*.egg-info
+.coverage
+.idea
+.DS_Store
+.vagrant
+build
+dist
+etc/test.yml

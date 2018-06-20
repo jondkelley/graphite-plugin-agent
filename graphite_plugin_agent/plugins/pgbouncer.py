@@ -4,7 +4,7 @@ pgBouncer Plugin Support
 """
 import logging
 
-from newrelic_plugin_agent.plugins import postgresql
+from graphite_plugin_agent.plugins import postgresql
 
 LOGGER = logging.getLogger(__name__)
 

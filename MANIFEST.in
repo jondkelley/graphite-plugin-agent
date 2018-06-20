@@ -1,6 +1,6 @@
 include LICENSE
 include README.rst
 include apc-nrp.php
-include etc/init.d/newrelic-plugin-agent.deb
-include etc/init.d/newrelic-plugin-agent.rhel
-include etc/newrelic/newrelic-plugin-agent.cfg
+include etc/init.d/graphite-plugin-agent.deb
+include etc/init.d/graphite-plugin-agent.rhel
+include etc/graphite-plugin-agent.cfg
