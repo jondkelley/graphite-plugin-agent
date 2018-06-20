@@ -1,0 +1,6 @@
+include LICENSE
+include README.rst
+include apc-nrp.php
+include etc/init.d/newrelic-plugin-agent.deb
+include etc/init.d/newrelic-plugin-agent.rhel
+include etc/newrelic/newrelic-plugin-agent.cfg
